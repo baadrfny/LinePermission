@@ -25,7 +25,7 @@ public class UserService {
     }
 
     private void loadUsers() {
-        File file = new File("src/main/resources/users.txt");
+        File file = new File("users.txt");
         if (!file.exists()) {
             return;
         }
@@ -89,7 +89,7 @@ public class UserService {
 
 
     public boolean saveUser(String username , String passHach){
-        try (FileWriter fw = new FileWriter("src/main/resources/users.txt", true)) {
+        try (FileWriter fw = new FileWriter("users.txt", true)) {
             BufferedWriter bw = new BufferedWriter(fw);
             PrintWriter out = new PrintWriter(bw);
 
