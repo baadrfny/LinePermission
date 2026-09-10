@@ -9,6 +9,7 @@ public class ConsolApp {
 
     UserService  userService = new UserService();
     Scanner scanner = new Scanner(System.in);
+    String currentUser = null;
 
     
 
@@ -49,10 +50,47 @@ public class ConsolApp {
 
         boolean logged = userService.authenticate(UserName, PassWord);
         if (logged) {
+            currentUser = UserName;
             System.out.println("Your Auth is successfully");
+            showDashboard();
+
         }else{
             System.out.println("Your Auth is failed");
         }
 
+    }
+
+
+    public void showDashboard(){
+
+        boolean sessionActive = true;
+
+        while(sessionActive){
+            System.out.println("\n========================================");
+            System.out.println("      WELCOME TO YOUR DASHBOARD         ");
+            System.out.println("      Logged in as: " + currentUser     );
+            System.out.println("========================================");
+            System.out.println("1. Log Out");
+            System.out.print("Choose an option: ");
+
+            String choice = scanner.nextLine();
+
+            switch (choice) {
+                case "1":
+                    sessionActive = false;
+                    currentUser = null;
+                    System.out.println("Logged out successfully");
+                    break;
+                default:
+                    System.out.println("Invalid choice Pls try again");
+            }
+        }
+        
+    }
+
+
+    public void logout() {
+        System.out.println(">> User " + currentUser + " has been logged out successfully");
+        currentUser = null;
     }
 }
