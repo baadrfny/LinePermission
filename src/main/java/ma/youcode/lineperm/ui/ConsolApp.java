@@ -93,4 +93,5 @@ public class ConsolApp {
         System.out.println(">> User " + currentUser + " has been logged out successfully");
         currentUser = null;
     }
+    //
 }
