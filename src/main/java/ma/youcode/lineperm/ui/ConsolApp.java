@@ -92,6 +92,13 @@ public class ConsolApp {
                         System.out.println("Invalid command try : cat <filename>");
                     }
                     break;
+                case "rm":
+                    if (!arg.isEmpty()) {
+                        FileService.deleteFile(currentUser, arg);
+                    } else {
+                        System.out.println("Invalid command try : rm <filename>");
+                    }
+                    break;
                 case "chmod":
                     String[] chmodParts = arg.split("\\s+", 2);
                     if (chmodParts.length == 2) {
@@ -107,6 +114,7 @@ public class ConsolApp {
                     System.out.println("  nano <filename>  : Edit file");
                     System.out.println("  cat <filename>   : Read file");
                     System.out.println("  chmod <perm> <file>: Change permissions");
+                    System.out.println("  rm <filename>    : Remove a file");
                     System.out.println("  help             : Show this help message");
                     System.out.println("  logout           : Log out of the application");
                     break;

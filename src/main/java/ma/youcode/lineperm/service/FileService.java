@@ -201,6 +201,55 @@ public class FileService {
         return findFileRecord(fileName) != null;
     }
 
+    public static void deleteFile(String currentUser, String fileName) {
+        FichierProtege fichier = findFileRecord(fileName);
+        if (fichier == null) {
+            System.out.println("Permission denied.");
+            return;
+        }
+
+        if (!currentUser.equals(fichier.getProprietaire())) {
+            System.out.println("Permission denied.");
+            return;
+        }
+
+        Path path = Path.of(DATA_DIR, fileName);
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            System.out.println("Permission denied.");
+            return;
+        }
+
+        removeFileRecordFromDb(fileName);
+        System.out.println("File removed successfully.");
+    }
+
+    private static void removeFileRecordFromDb(String fileName) {
+        File file = new File(FILES_DB);
+        List<String> lines = new ArrayList<>();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                String[] parts = line.split(":", 3);
+                if (parts.length == 3 && parts[0].equals(fileName)) {
+                    continue;
+                }
+                lines.add(line);
+            }
+        } catch (IOException e) {
+            return;
+        }
+
+        try (PrintWriter pw = new PrintWriter(new FileWriter(file, false))) {
+            for (String l : lines) {
+                pw.println(l);
+            }
+        } catch (IOException e) {
+        }
+    }
+
     private static void updateFilePermissionsInDb(String fileName, String newPermissions) {
         File file = new File(FILES_DB);
         List<String> lines = new ArrayList<>();
