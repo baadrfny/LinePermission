@@ -10,6 +10,11 @@ public class Main {
     Scanner scanner = new Scanner(System.in);
     
     public static void main(String[] args) {
+
+
+        // UserService file = new UserService();
+        // file.createFile();
+
         
         System.out.println("Please choose an option:");
         System.out.println("1. Option A (Sign Up)");
