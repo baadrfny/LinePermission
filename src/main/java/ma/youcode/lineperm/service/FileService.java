@@ -143,42 +143,57 @@ public class FileService {
         }
     }
 
+
     public static void changePermission(String currentUser, String fileName, String permissionChange) {
-        FichierProtege fichier = findFileRecord(fileName);
-        if (fichier == null) {
-            System.out.println("Permission denied.");
-            return;
-        }
+    FichierProtege fichier = findFileRecord(fileName);
 
-        if (!currentUser.equals(fichier.getProprietaire())) {
-            System.out.println("Permission denied.");
-            return;
-        }
-
-        boolean isRemove = permissionChange.startsWith("-");
-        char targetPerm = permissionChange.replace("-", "").charAt(0);
-
-        String[] parts = fichier.getPermissions().split("\\|");
-        String ownerPerm = parts[0];
-        StringBuilder otherPerm = new StringBuilder(parts[1]);
-
-        int index = -1;
-        if (targetPerm == 'r') index = 0;
-        else if (targetPerm == 'w') index = 1;
-        else if (targetPerm == 'd') index = 2;
-
-        if (index != -1) {
-            if (isRemove) {
-                otherPerm.setCharAt(index, '-');
-            } else {
-                otherPerm.setCharAt(index, targetPerm);
-            }
-        }
-
-        String newFullPermission = ownerPerm + "|" + otherPerm.toString();
-        updateFilePermissionsInDb(fileName, newFullPermission);
-        System.out.println("Permissions updated successfully.");
+    if (fichier == null) {
+        System.out.println("File not found");
+        return;
     }
+
+    if (!currentUser.equals(fichier.getProprietaire())) {
+        System.out.println("Permission denied");
+        return;
+    }
+
+    if (permissionChange == null || permissionChange.length() != 3) {
+        System.out.println("Invalid permission");
+        return;
+    }
+
+    for (int i = 0; i < 3; i++) {
+        char c = permissionChange.charAt(i);
+
+        if (i == 0 && c != 'r' && c != '-') {
+            System.out.println("Invalid permission.");
+            return;
+        }
+
+        if (i == 1 && c != 'w' && c != '-') {
+            System.out.println("Invalid permission.");
+            return;
+        }
+
+        if (i == 2 && c != 'd' && c != '-') {
+            System.out.println("Invalid permission.");
+            return;
+        }
+    }
+
+    String[] parts = fichier.getPermissions().split("\\|", 2);
+
+    String ownerPerm = parts[0];
+
+    String otherPerm = permissionChange;
+
+    String newFullPermission = ownerPerm + "|" + otherPerm;
+
+    updateFilePermissionsInDb(fileName, newFullPermission);
+
+    System.out.println("Permissions updated successfully.");
+}
+
 
     private static FichierProtege findFileRecord(String fileName) {
         File file = new File(FILES_DB);
