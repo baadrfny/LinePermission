@@ -4,6 +4,5 @@ badr2:badr:rwd|r--
 touch badrTest.txt:badr:rwd|r--
 badroxy.txt:badr:rwd|r--
 badro.txt:badr:rwd|r--
-newone:badr:rwd|r-d
 bdr.txt:badr:rwd|r--
 inas.txt:Inass:rwd|rwd

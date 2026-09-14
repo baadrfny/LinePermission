@@ -41,7 +41,7 @@ public class UserService {
                 }
             }
         } catch (IOException e) {
-            System.out.println("Error reading file.");
+            System.out.println("Error reading file");
         }
     }
 
