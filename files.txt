@@ -6,3 +6,5 @@ badroxy.txt:badr:rwd|r--
 badro.txt:badr:rwd|r--
 bdr.txt:badr:rwd|r--
 inas.txt:Inass:rwd|rwd
+testo.txt:badr:rwd|---
+abdo.txt:abdo:rwd|r--
