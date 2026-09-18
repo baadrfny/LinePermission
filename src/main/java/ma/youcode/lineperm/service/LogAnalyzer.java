@@ -85,6 +85,9 @@ public Optional<Map.Entry<String , Long>> mostUser(){
     return logs.stream().collect(Collectors.groupingBy(log -> log.getUtilisateur(), Collectors.counting())).entrySet().stream().max(Map.Entry.comparingByValue());
 }
 
+public Map<String , Long> actionWithType(){
+    return logs.stream().collect(Collectors.groupingBy(log -> log.getAction(), Collectors.counting()));
+} 
 
 
     

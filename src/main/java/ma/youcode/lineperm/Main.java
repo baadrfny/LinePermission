@@ -32,6 +32,7 @@ public class Main {
         System.out.println("8. Option H (Top 3 files)");
         System.out.println("9. Option I (Refused Users)");
         System.out.println("10. Option J (Most active user)");
+        System.out.println("11. Option K (Action distributios with type)");
         System.out.print("Enter your choice : ");
 
         int choice = new Scanner(System.in).nextInt();
@@ -73,7 +74,9 @@ public class Main {
             case 10 : 
                 System.out.println("Most active user : " + analyzer.mostUser());
                 break;
-
+            case 11 : 
+                System.out.println("Action distributios with type : " + analyzer.actionWithType());
+                break;
             default:
                 System.out.println("Invalid choice. Please try again.");
                 
