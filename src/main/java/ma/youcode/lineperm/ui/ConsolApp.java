@@ -3,32 +3,52 @@ package ma.youcode.lineperm.ui;
 import ma.youcode.lineperm.service.FileService;
 import ma.youcode.lineperm.service.UserService;
 import java.util.Scanner;
+import ma.youcode.lineperm.service.LogAnalyzer;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter; 
 
 public class ConsolApp {
 
     UserService userService = new UserService();
     Scanner scanner = new Scanner(System.in);
     String currentUser = null;
+    private LogAnalyzer logAnalyzer;
 
-    public void start(){
+    public ConsolApp(LogAnalyzer logAnalyzer) {
+        this.logAnalyzer = logAnalyzer;
+
+    }
+
+    private void logAction(String action, String file, String result) {
+        String date = LocalDate.now().toString();
+        String time = LocalTime.now() 
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
+
+        String log = date + ";" + time + ";" + currentUser + ";"
+                + action + ";" + file + ";" + result;
+
+        logAnalyzer.logAction(log);
+    }
+    public void start() {
         System.out.println("============ Sign Up To LineAPermission App ==========");
-        
+
         System.out.print("Pls Entre ur username : ");
         String UserName = scanner.nextLine();
 
         System.out.print("Pls Entre ur password : ");
         String PassWord = scanner.nextLine();
 
-        boolean created = userService.createAccount(UserName , PassWord);
+        boolean created = userService.createAccount(UserName, PassWord);
 
         if (created) {
             System.out.println("Sign up Successfully");
-        }else{
+        } else {
             System.out.println("Failed Sign up");
         }
     }
 
-    public void login(){
+    public void login() {
         System.out.println("============ Login To LineAPermission App ==========");
 
         System.out.println("Entrer ur username : ");
@@ -42,20 +62,20 @@ public class ConsolApp {
             currentUser = UserName;
             System.out.println("Your Auth is successfully");
             showShell();
-        }else{
+        } else {
             System.out.println("Your Auth is failed");
         }
     }
 
-    public void showShell(){
+    public void showShell() {
         boolean sessionActive = true;
 
         System.out.println("\n========================================");
         System.out.println("       WELCOME TO LINEPERM SHELL         ");
-        System.out.println("      Logged in as: " + currentUser     );
+        System.out.println("      Logged in as: " + currentUser);
         System.out.println("========================================");
 
-        while(sessionActive){
+        while (sessionActive) {
             System.out.print(currentUser + "@linperm>");
             String commandInput = scanner.nextLine().trim();
 
@@ -67,44 +87,74 @@ public class ConsolApp {
                 case "ls":
                     if (arg.equals("-l")) {
                         FileService.listFiles(currentUser);
+                        logAction("LECTURE", "-", "OK");
                     } else {
-                        System.out.println("Invalid command. try : ls -l");
+                        System.out.println("Invalid command");
                     }
                     break;
                 case "touch":
                     if (!arg.isEmpty()) {
-                        FileService.createFile(currentUser, arg);
+                        boolean success = FileService.createFile(currentUser, arg);
+
+                        logAction(
+                                "ECRITURE",
+                                arg,
+                                success ? "OK" : "REFUSE");
                     } else {
-                        System.out.println("Invalid command. try : touch <filename>");
+                        System.out.println("Invalid command try");
                     }
                     break;
                 case "nano":
                     if (!arg.isEmpty()) {
-                        FileService.editFile(currentUser, arg);
+                        boolean success = FileService.editFile(currentUser, arg);
+
+                        logAction(
+                                "ECRITURE",
+                                arg,
+                                success ? "OK" : "REFUSE");
                     } else {
-                        System.out.println("Invalid command try : nano <filename>");
+                        System.out.println("Invalid command try");
                     }
                     break;
                 case "cat":
                     if (!arg.isEmpty()) {
-                        FileService.readFile(currentUser, arg);
+                        boolean success = FileService.readFile(currentUser, arg);
+
+                        logAction(
+                                "LECTURE",
+                                arg,
+                                success ? "OK" : "REFUSE");
                     } else {
-                        System.out.println("Invalid command try : cat <filename>");
+                        System.out.println("Invalid command try");
                     }
                     break;
                 case "rm":
                     if (!arg.isEmpty()) {
-                        FileService.deleteFile(currentUser, arg);
+                        boolean success = FileService.deleteFile(currentUser, arg);
+
+                        logAction(
+                                "SUPPRESSION",
+                                arg,
+                                success ? "OK" : "REFUSE");
                     } else {
-                        System.out.println("Invalid command try : rm <filename>");
+                        System.out.println("Invalid command try");
                     }
                     break;
                 case "chmod":
                     String[] chmodParts = arg.split("\\s+", 2);
+
                     if (chmodParts.length == 2) {
-                        FileService.changePermission(currentUser, chmodParts[1], chmodParts[0]);
+                        boolean success = FileService.changePermission(
+                                currentUser,
+                                chmodParts[1],
+                                chmodParts[0]);
+
+                        logAction(
+                                "CHANGEMENT_PERMISSION",
+                                chmodParts[1],
+                                success ? "OK" : "REFUSE");
                     } else {
-                        System.out.println("Invalid command try : chmod <+/-perm> <filename>");
+                        System.out.println("Invalid command try");
                     }
                     break;
                 case "help":
@@ -121,22 +171,20 @@ public class ConsolApp {
                 case "logout":
                     logout();
                     sessionActive = false;
-                    
+
                     break;
 
                 default:
                     System.out.println("Invalid choice Pls try again");
-          
-                }
-        }
 
+            }
+        }
 
     }
 
-
     public void logout() {
-        System.out.println(">> User " + currentUser + " has been logged out successfully");
-        currentUser = null;
+    System.out.println(">> User " + currentUser + " has been logged out successfully");
+    currentUser = null;
     }
 
 }

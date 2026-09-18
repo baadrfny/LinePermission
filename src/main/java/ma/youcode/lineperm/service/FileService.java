@@ -36,55 +36,57 @@ public class FileService {
         }
     }
 
-    public static void createFile(String currentUser, String fileName) {
+    public static boolean createFile(String currentUser, String fileName) {
         if (fileName.contains("/") || fileName.contains("\\")) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         Path path = Path.of(DATA_DIR, fileName);
 
         if (isFileNameTaken(fileName)) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         try {
             Files.createDirectories(path.getParent());
             if (Files.exists(path)) {
                 System.out.println("Permission denied.");
-                return;
+                return false;
             }
             Files.createFile(path);
         } catch (IOException e) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         String defaultPermission = "rwd|---";
 
         try (FileWriter fw = new FileWriter(FILES_DB, true);
-             BufferedWriter bw = new BufferedWriter(fw);
-             PrintWriter out = new PrintWriter(bw)) {
+                BufferedWriter bw = new BufferedWriter(fw);
+                PrintWriter out = new PrintWriter(bw)) {
 
             out.println(fileName + ":" + currentUser + ":" + defaultPermission);
             System.out.println("File created successfully.");
 
         } catch (IOException e) {
             System.out.println("Error writing to file.");
+            return false;
         }
+        return true;
     }
 
-    public static void readFile(String currentUser, String fileName) {
+    public static boolean readFile(String currentUser, String fileName) {
         FichierProtege fichier = findFileRecord(fileName);
         if (fichier == null) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         if (!ControleAcces.estAutorise(currentUser, fichier, 'r')) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         Path path = Path.of(DATA_DIR, fileName);
@@ -92,22 +94,25 @@ public class FileService {
             if (Files.exists(path)) {
                 String content = Files.readString(path);
                 System.out.print(content);
+                return true;
             }
         } catch (IOException e) {
             System.out.println("Permission denied.");
         }
+
+        return false;
     }
 
-    public static void editFile(String currentUser, String fileName) {
+    public static boolean editFile(String currentUser, String fileName) {
         FichierProtege fichier = findFileRecord(fileName);
         if (fichier == null) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         if (!ControleAcces.estAutorise(currentUser, fichier, 'w')) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         boolean canRead = ControleAcces.estAutorise(currentUser, fichier, 'r');
@@ -140,64 +145,67 @@ public class FileService {
             System.out.println("File saved successfully");
         } catch (IOException e) {
             System.out.println("Error writing to file: " + e.getMessage());
-        }
-    }
-
-
-    public static void changePermission(String currentUser, String fileName, String permissionChange) {
-    FichierProtege fichier = findFileRecord(fileName);
-
-    if (fichier == null) {
-        System.out.println("File not found");
-        return;
-    }
-
-    if (!currentUser.equals(fichier.getProprietaire())) {
-        System.out.println("Permission denied");
-        return;
-    }
-
-    if (permissionChange == null || permissionChange.length() != 3) {
-        System.out.println("Invalid permission");
-        return;
-    }
-
-    for (int i = 0; i < 3; i++) {
-        char c = permissionChange.charAt(i);
-
-        if (i == 0 && c != 'r' && c != '-') {
-            System.out.println("Invalid permission.");
-            return;
+            return false;
         }
 
-        if (i == 1 && c != 'w' && c != '-') {
-            System.out.println("Invalid permission.");
-            return;
-        }
-
-        if (i == 2 && c != 'd' && c != '-') {
-            System.out.println("Invalid permission.");
-            return;
-        }
+        return true;
     }
 
-    String[] parts = fichier.getPermissions().split("\\|", 2);
+    public static boolean changePermission(String currentUser, String fileName, String permissionChange) {
+        FichierProtege fichier = findFileRecord(fileName);
 
-    String ownerPerm = parts[0];
+        if (fichier == null) {
+            System.out.println("File not found");
+            return false;
+        }
 
-    String otherPerm = permissionChange;
+        if (!currentUser.equals(fichier.getProprietaire())) {
+            System.out.println("Permission denied");
+            return false;
+        }
 
-    String newFullPermission = ownerPerm + "|" + otherPerm;
+        if (permissionChange == null || permissionChange.length() != 3) {
+            System.out.println("Invalid permission");
+            return false;
+        }
 
-    updateFilePermissionsInDb(fileName, newFullPermission);
+        for (int i = 0; i < 3; i++) {
+            char c = permissionChange.charAt(i);
 
-    System.out.println("Permissions updated successfully.");
-}
+            if (i == 0 && c != 'r' && c != '-') {
+                System.out.println("Invalid permission.");
+                return false;
+            }
 
+            if (i == 1 && c != 'w' && c != '-') {
+                System.out.println("Invalid permission.");
+                return false;
+            }
+
+            if (i == 2 && c != 'd' && c != '-') {
+                System.out.println("Invalid permission.");
+                return false;
+            }
+        }
+
+        String[] parts = fichier.getPermissions().split("\\|", 2);
+
+        String ownerPerm = parts[0];
+
+        String otherPerm = permissionChange;
+
+        String newFullPermission = ownerPerm + "|" + otherPerm;
+
+        updateFilePermissionsInDb(fileName, newFullPermission);
+
+        System.out.println("Permissions updated successfully.");
+        return true;
+    }
 
     private static FichierProtege findFileRecord(String fileName) {
         File file = new File(FILES_DB);
-        if (!file.exists()) return null;
+        if (!file.exists())
+            return null;
 
         try (BufferedReader br = new BufferedReader(new FileReader(file))) {
             String line;
@@ -216,16 +224,16 @@ public class FileService {
         return findFileRecord(fileName) != null;
     }
 
-    public static void deleteFile(String currentUser, String fileName) {
+    public static boolean deleteFile(String currentUser, String fileName) {
         FichierProtege fichier = findFileRecord(fileName);
         if (fichier == null) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         if (!currentUser.equals(fichier.getProprietaire())) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         Path path = Path.of(DATA_DIR, fileName);
@@ -233,11 +241,12 @@ public class FileService {
             Files.deleteIfExists(path);
         } catch (IOException e) {
             System.out.println("Permission denied.");
-            return;
+            return false;
         }
 
         removeFileRecordFromDb(fileName);
         System.out.println("File removed successfully.");
+        return true;
     }
 
     private static void removeFileRecordFromDb(String fileName) {

@@ -12,7 +12,7 @@ public class ControleAcces {
         boolean isOwner = currentUser.equals(fichier.getProprietaire());
         String activePermission = isOwner ? fichier.getPermissionProprietaire() : fichier.getPermissionAutres();
 
-        int index = -1;
+        int index = -1; 
         if (action == 'r') {
             index = 0;
         } else if (action == 'w') {
