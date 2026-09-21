@@ -1,7 +1,9 @@
 package ma.youcode.lineperm;
 import ma.youcode.lineperm.service.*;
 import ma.youcode.lineperm.ui.ConsolApp;
+import ma.youcode.lineperm.database.DBConnection;
 import ma.youcode.lineperm.model.*;
+import ma.youcode.lineperm.database.DatabaseInitializer;
 
 
 import java.io.Console;
@@ -13,6 +15,11 @@ public class Main {
     
     
     public static void main(String[] args) {
+
+        System.out.println("trying to connect");
+        DBConnection.getInstance();
+
+        DatabaseInitializer.initialize();
 
         
 
