@@ -117,4 +117,40 @@ public class FichierDao extends AbstractDao<FichierProtege> {
         }
     }
 
+
+    public FichierProtege findByName(String fileName) {
+
+    String sql = "SELECT * FROM fichiers WHERE nom = ?";
+
+    try {
+        PreparedStatement prpr = connection.prepareStatement(sql);
+        prpr.setString(1, fileName);
+
+        ResultSet res = prpr.executeQuery();
+
+        if (res.next()) {
+
+            FichierProtege fichier = new FichierProtege(
+                    res.getInt("id"),
+                    res.getString("nom"),
+                    res.getInt("proprietaire_id"),
+                    res.getString("permissions")
+            );
+
+            res.close();
+            prpr.close();
+
+            return fichier;
+        }
+
+        res.close();
+        prpr.close();
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return null;
+}
+
 }

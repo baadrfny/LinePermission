@@ -1,7 +1,10 @@
 package ma.youcode.lineperm.service;
 
 import ma.youcode.lineperm.access.ControleAcces;
+import ma.youcode.lineperm.dao.FichierDao;
+import ma.youcode.lineperm.dao.UserDao;
 import ma.youcode.lineperm.model.FichierProtege;
+import ma.youcode.lineperm.model.User;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -12,29 +15,29 @@ import java.util.Scanner;
 
 public class FileService {
 
-    private static final String FILES_DB = "files.txt";
     private static final String DATA_DIR = "data";
+    private static FichierDao fichierDao = new FichierDao();
+    private static UserDao userDao = new UserDao();
 
     public static void listFiles(String currentUser) {
-        File file = new File(FILES_DB);
-        if (!file.exists()) {
+
+        User user = userDao.findByUsername(currentUser);
+
+        if (user == null) {
             return;
         }
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(":", 3);
-                if (parts.length == 3) {
-                    String fileName = parts[0];
-                    String owner = parts[1];
-                    String permissions = parts[2];
-                    System.out.println(permissions + " " + owner + " " + fileName);
-                }
-            }
-        } catch (IOException e) {
-            System.out.println("Error reading files.");
+
+        List<FichierProtege> fichiers = fichierDao.findByPropietaire(user.getId());
+
+        for (FichierProtege fichier : fichiers) {
+            System.out.println(
+                    fichier.getPermissions() + " " +
+                            currentUser + " " +
+                            fichier.getNom());
         }
     }
+
+
 
     public static boolean createFile(String currentUser, String fileName) {
         if (fileName.contains("/") || fileName.contains("\\")) {
@@ -63,21 +66,33 @@ public class FileService {
 
         String defaultPermission = "rwd|---";
 
-        try (FileWriter fw = new FileWriter(FILES_DB, true);
-                BufferedWriter bw = new BufferedWriter(fw);
-                PrintWriter out = new PrintWriter(bw)) {
-
-            out.println(fileName + ":" + currentUser + ":" + defaultPermission);
-            System.out.println("File created successfully.");
-
-        } catch (IOException e) {
-            System.out.println("Error writing to file.");
+        User user = userDao.findByUsername(currentUser);
+        
+        if (user == null) {
             return false;
         }
+
+        FichierProtege fichier = new FichierProtege(0, fileName, user.getId(),defaultPermission);
+        fichierDao.save(fichier);
+        System.out.println("File created seccessfuly");
         return true;
     }
 
+
+
+
+
+    private static FichierProtege findFileRecord(String fileName) {
+        return fichierDao.findByName(fileName);
+         
+    }
+
+
+
+
+
     public static boolean readFile(String currentUser, String fileName) {
+        
         FichierProtege fichier = findFileRecord(fileName);
         if (fichier == null) {
             System.out.println("Permission denied.");
@@ -159,7 +174,7 @@ public class FileService {
             return false;
         }
 
-        if (!currentUser.equals(fichier.getProprietaire())) {
+        if (!currentUser.equals(fichier.getPermissionProprietaire())) {
             System.out.println("Permission denied");
             return false;
         }
@@ -196,29 +211,13 @@ public class FileService {
 
         String newFullPermission = ownerPerm + "|" + otherPerm;
 
-        updateFilePermissionsInDb(fileName, newFullPermission);
+        fichierDao.updatePermission(fichier.getId(), newFullPermission);
 
         System.out.println("Permissions updated successfully.");
         return true;
     }
 
-    private static FichierProtege findFileRecord(String fileName) {
-        File file = new File(FILES_DB);
-        if (!file.exists())
-            return null;
-
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(":", 3);
-                if (parts.length == 3 && parts[0].equals(fileName)) {
-                    return new FichierProtege(parts[0], parts[1], parts[2]);
-                }
-            }
-        } catch (IOException e) {
-        }
-        return null;
-    }
+    
 
     private static boolean isFileNameTaken(String fileName) {
         return findFileRecord(fileName) != null;
@@ -231,7 +230,7 @@ public class FileService {
             return false;
         }
 
-        if (!currentUser.equals(fichier.getProprietaire())) {
+        if (!currentUser.equals(fichier.getPermissionProprietaire())) {
             System.out.println("Permission denied.");
             return false;
         }
@@ -244,59 +243,59 @@ public class FileService {
             return false;
         }
 
-        removeFileRecordFromDb(fileName);
+        fichierDao.delete(fichier.getId());
         System.out.println("File removed successfully.");
         return true;
     }
 
-    private static void removeFileRecordFromDb(String fileName) {
-        File file = new File(FILES_DB);
-        List<String> lines = new ArrayList<>();
+    // private static void removeFileRecordFromDb(String fileName) {
+    //     File file = new File(FILES_DB);
+    //     List<String> lines = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(":", 3);
-                if (parts.length == 3 && parts[0].equals(fileName)) {
-                    continue;
-                }
-                lines.add(line);
-            }
-        } catch (IOException e) {
-            return;
-        }
+    //     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+    //         String line;
+    //         while ((line = br.readLine()) != null) {
+    //             String[] parts = line.split(":", 3);
+    //             if (parts.length == 3 && parts[0].equals(fileName)) {
+    //                 continue;
+    //             }
+    //             lines.add(line);
+    //         }
+    //     } catch (IOException e) {
+    //         return;
+    //     }
 
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file, false))) {
-            for (String l : lines) {
-                pw.println(l);
-            }
-        } catch (IOException e) {
-        }
-    }
+    //     try (PrintWriter pw = new PrintWriter(new FileWriter(file, false))) {
+    //         for (String l : lines) {
+    //             pw.println(l);
+    //         }
+    //     } catch (IOException e) {
+    //     }
+    // }
 
-    private static void updateFilePermissionsInDb(String fileName, String newPermissions) {
-        File file = new File(FILES_DB);
-        List<String> lines = new ArrayList<>();
+    // private static void updateFilePermissionsInDb(String fileName, String newPermissions) {
+    //     File file = new File(FILES_DB);
+    //     List<String> lines = new ArrayList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                String[] parts = line.split(":", 3);
-                if (parts.length == 3 && parts[0].equals(fileName)) {
-                    lines.add(parts[0] + ":" + parts[1] + ":" + newPermissions);
-                } else {
-                    lines.add(line);
-                }
-            }
-        } catch (IOException e) {
-            return;
-        }
+    //     try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+    //         String line;
+    //         while ((line = br.readLine()) != null) {
+    //             String[] parts = line.split(":", 3);
+    //             if (parts.length == 3 && parts[0].equals(fileName)) {
+    //                 lines.add(parts[0] + ":" + parts[1] + ":" + newPermissions);
+    //             } else {
+    //                 lines.add(line);
+    //             }
+    //         }
+    //     } catch (IOException e) {
+    //         return;
+    //     }
 
-        try (PrintWriter pw = new PrintWriter(new FileWriter(file, false))) {
-            for (String l : lines) {
-                pw.println(l);
-            }
-        } catch (IOException e) {
-        }
-    }
+    //     try (PrintWriter pw = new PrintWriter(new FileWriter(file, false))) {
+    //         for (String l : lines) {
+    //             pw.println(l);
+    //         }
+    //     } catch (IOException e) {
+    //     }
+    // }
 }
