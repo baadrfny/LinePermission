@@ -1,18 +1,50 @@
 package ma.youcode.lineperm.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.sql.ResultSet;
-import ma.youcode.lineperm.dao.AbstractDao;
-import ma.youcode.lineperm.model.User;
 
+import ma.youcode.lineperm.model.AccessLog;
+import ma.youcode.lineperm.model.FichierProtege;
+import ma.youcode.lineperm.model.User;
 
 public class LogDao extends AbstractDao {
 
-    public int compterTotal(){
+    public void save(AccessLog log) {
+
+        String sql = "INSERT INTO logs (user_id, fichier_id, action, resultat) VALUES (?, ?, ?, ?)";
+
+        try {
+            UserDao userDao = new UserDao();
+            FichierDao fichierDao = new FichierDao();
+
+            User user = userDao.findByUsername(log.getUtilisateur());
+            FichierProtege fichier = fichierDao.findByName(log.getFichier());
+
+            if (user == null || fichier == null) {
+                return;
+            }
+
+            PreparedStatement prpr = connection.prepareStatement(sql);
+
+            prpr.setInt(1, user.getId());
+            prpr.setInt(2, fichier.getId());
+            prpr.setString(3, log.getAction());
+            prpr.setString(4, log.getResultat());
+
+            prpr.executeUpdate();
+            prpr.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int compterTotal() {
+
         String sql = "SELECT COUNT(*) FROM logs";
 
         try {
@@ -27,7 +59,7 @@ public class LogDao extends AbstractDao {
 
                 return total;
             }
-            
+
             res.close();
             prpr.close();
 
@@ -38,9 +70,9 @@ public class LogDao extends AbstractDao {
         return 0;
     }
 
+    public int compterRefuse() {
 
-    public int compterRefuse(){
-        String sql = "SELECT COUNT(*) FROM logs where status = 'refuse'";
+        String sql = "SELECT COUNT(*) FROM logs WHERE resultat = 'REFUSE'";
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
@@ -65,63 +97,77 @@ public class LogDao extends AbstractDao {
         return 0;
     }
 
+    public List<String> userDistincts() {
 
-    public List<String> userDistincts(){
         List<String> users = new ArrayList<>();
-        String sql = "SELECT DISTINCT u.login FROM logs l JOIN users u ON l.user_id = u.id";
+
+        String sql = "SELECT DISTINCT u.login FROM logs l " +
+                "JOIN users u ON l.user_id = u.id";
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
             ResultSet res = prpr.executeQuery();
+
             while (res.next()) {
-                users.add(res.getString("username"));
-                res.close();
-                prpr.close();
-                
+                users.add(res.getString("login"));
             }
+
             res.close();
             prpr.close();
+
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
 
         return users;
     }
 
+    public Map<String, Long> actionUser() {
 
-    public List<String> actionUser(){
-        String sql = "SELECT DISTINCT u.login FROM users u JOIN logs l ON u.id = l.user_id";
-        List<String> logs = new ArrayList<>();
+        Map<String, Long> users = new HashMap<>();
+
+        String sql = "SELECT u.login, COUNT(*) AS total FROM logs l JOIN users u ON l.user_id = u.id GROUP BY u.login";
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
+
             ResultSet res = prpr.executeQuery();
+
             while (res.next()) {
-                logs.add(res.getString("username"));
-                res.close();
-                prpr.close();
+                users.put(
+                        res.getString("login"),
+                        res.getLong("total"));
             }
+
             res.close();
             prpr.close();
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return logs;
 
+        return users;
     }
 
-    public List<String> topFichiers(){
+    public List<String> topFichiers() {
+
         List<String> top = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.nom FROM fichiers f JOIN logs l ON l.fichier_id = f.id";
+
+        String sql = """
+                SELECT f.nom, COUNT(*) AS total
+                FROM fichiers f
+                JOIN logs l ON l.fichier_id = f.id
+                GROUP BY f.id, f.nom
+                ORDER BY total DESC
+                LIMIT 3
+                """;
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
             ResultSet res = prpr.executeQuery();
+
             while (res.next()) {
                 top.add(res.getString("nom"));
-                res.close();
-                prpr.close();
-    
             }
 
             res.close();
@@ -130,73 +176,97 @@ public class LogDao extends AbstractDao {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return top;
     }
 
+    public List<String> refuseByUser() {
 
-    public String mostUser(){
-        // List<User> users = new ArrayList<>();
-        String sql = "SELECT u.login, COUNT(*) AS total FROM users u JOIN logs l ON l.user_id = u.id GROUP BY u.id, u.login ORDER BY total DESC LIMIT 1";
+        List<String> users = new ArrayList<>();
+
+        String sql = "SELECT DISTINCT u.login " +
+                "FROM users u " +
+                "JOIN logs l ON l.user_id = u.id " +
+                "WHERE l.resultat = 'REFUSE'";
+
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
             ResultSet res = prpr.executeQuery();
+
+            while (res.next()) {
+                users.add(res.getString("login"));
+            }
+
+            res.close();
+            prpr.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return users;
+    }
+
+    public String mostUser() {
+
+        String sql = """
+                SELECT u.login, COUNT(*) AS total
+                FROM users u
+                JOIN logs l ON l.user_id = u.id
+                GROUP BY u.id, u.login
+                ORDER BY total DESC
+                LIMIT 1
+                """;
+
+        try {
+            PreparedStatement prpr = connection.prepareStatement(sql);
+            ResultSet res = prpr.executeQuery();
+
             if (res.next()) {
                 String user = res.getString("login");
 
                 res.close();
                 prpr.close();
+
                 return user;
             }
+
             res.close();
             prpr.close();
-            return null;
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return null;
     }
 
+    public Map<String, Integer> repartitionByAction() {
 
-    public List<String> refuseByUser(){
-        
-        String sql = "SELECT DISTINCT u.login FROM users u JOIN logs l ON l.user_id = u.id where resultat = 'REFUSE' ";
-        List<String> users = new ArrayList<>();
-        try {
-            PreparedStatement prpr = connection.prepareStatement(sql);
-            ResultSet res = prpr.executeQuery();
-            while (res.next()) {
-                
-                users.add(res.getString("login"));
-            }
-            res.close();
-            prpr.close();
-            return users;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return users;
-    }
+        Map<String, Integer> actions = new HashMap<>();
 
-    public Map<String, Integer> repartitionByAction(){
-        String sql = "SELECT action , COUNT(action) AS ttl FROM logs GROUP BY action ORDER BY ttl DESC";
-        Map<String,Integer> actions = new HashMap<>();
+        String sql = "SELECT action, COUNT(action) AS ttl " +
+                "FROM logs " +
+                "GROUP BY action " +
+                "ORDER BY ttl DESC";
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
             ResultSet res = prpr.executeQuery();
+
             while (res.next()) {
-                actions.put(res.getString("action"), res.getInt("ttl"));
+                actions.put(
+                        res.getString("action"),
+                        res.getInt("ttl"));
             }
+
             res.close();
             prpr.close();
-            return actions;
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+
         return actions;
     }
-
-
-
-    
 }

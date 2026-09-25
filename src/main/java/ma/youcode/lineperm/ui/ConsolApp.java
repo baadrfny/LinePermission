@@ -1,15 +1,17 @@
 package ma.youcode.lineperm.ui;
 
+import ma.youcode.lineperm.dao.LogDao;
+import ma.youcode.lineperm.model.AccessLog;
 import ma.youcode.lineperm.service.FileService;
 import ma.youcode.lineperm.service.UserService;
 import java.util.Scanner;
 import ma.youcode.lineperm.service.LogAnalyzer;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter; 
+import java.time.format.DateTimeFormatter;
 
 public class ConsolApp {
-
+    LogDao logDao = new LogDao();
     UserService userService = new UserService();
     Scanner scanner = new Scanner(System.in);
     String currentUser = null;
@@ -21,15 +23,23 @@ public class ConsolApp {
     }
 
     private void logAction(String action, String file, String result) {
+
         String date = LocalDate.now().toString();
-        String time = LocalTime.now() 
+
+        String time = LocalTime.now()
                 .format(DateTimeFormatter.ofPattern("HH:mm"));
 
-        String log = date + ";" + time + ";" + currentUser + ";"
-                + action + ";" + file + ";" + result;
+        AccessLog log = new AccessLog(
+                date,
+                time,
+                currentUser,
+                action,
+                file,
+                result);
 
-        logAnalyzer.logAction(log);
+        logDao.save(log);
     }
+
     public void start() {
         System.out.println("============ Sign Up To LineAPermission App ==========");
 
@@ -183,8 +193,8 @@ public class ConsolApp {
     }
 
     public void logout() {
-    System.out.println(">> User " + currentUser + " has been logged out successfully");
-    currentUser = null;
+        System.out.println(">> User " + currentUser + " has been logged out successfully");
+        currentUser = null;
     }
 
 }
