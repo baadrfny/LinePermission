@@ -5,9 +5,9 @@ import java.util.List;
 //generic interface 
 public interface Dao<T> {
 
-    void save(T entity);
+    // void save(T entity);
 
-    T findById(int id);
+    // T findById(int id);
 
     // T findByUsername(String username);
 
@@ -15,5 +15,5 @@ public interface Dao<T> {
 
     // T findByPropietaire(int proprietaire_is);
 
-    void delete(int id);
+    // void delete(int id);
 }

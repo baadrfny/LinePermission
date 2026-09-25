@@ -11,7 +11,7 @@ import ma.youcode.lineperm.model.User;
 public class UserDao extends AbstractDao<User> {
 
 
-    @Override 
+    // @Override 
     public void save(User entity){
         String sql = "INSERT INTO users (login,password) VALUES (? , ?)";
 
@@ -61,7 +61,7 @@ public class UserDao extends AbstractDao<User> {
 
 
 
-    @Override 
+    // @Override 
     public User findById(int id){
         
         String sql = "SELECT * FROM users where id = ?";
@@ -99,7 +99,7 @@ public class UserDao extends AbstractDao<User> {
 
         List<User> users = new ArrayList<>();
 
-        String sql = "SELECT * FROM USERS";
+        String sql = "SELECT * FROM users";
 
         try {
             PreparedStatement prpr = connection.prepareStatement(sql);
@@ -108,7 +108,7 @@ public class UserDao extends AbstractDao<User> {
             while (result.next()) {
                 User user = new User(
                     result.getInt("id"),
-                    result.getString("username"),
+                    result.getString("login"),
                     result.getString("password")
                 );
 
@@ -125,17 +125,19 @@ public class UserDao extends AbstractDao<User> {
 
 
 
-    @Override 
-    public void delete(int id){
+    // @Override 
+    public boolean delete(int id){
         try {
             String sql = "DELETE FROM users where id = ?";
             PreparedStatement prpr = connection.prepareStatement(sql);
             prpr.setInt(1, id);
             prpr.executeUpdate();
             prpr.close();
+            
         
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return true;
     }
 }

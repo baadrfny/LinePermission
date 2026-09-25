@@ -9,7 +9,7 @@ import ma.youcode.lineperm.model.FichierProtege;
 public class FichierDao extends AbstractDao<FichierProtege> {
 
 
-    public void save(FichierProtege entity){ 
+    public boolean save(FichierProtege entity){ 
         String sql = "INSERT INTO fichiers (nom, proprietaire_id, permissions) VALUES (?,?,?)";
 
         try {
@@ -22,6 +22,7 @@ public class FichierDao extends AbstractDao<FichierProtege> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return true;
     }
 
 
@@ -57,7 +58,7 @@ public class FichierDao extends AbstractDao<FichierProtege> {
 
 
 
-    public void delete(int id){
+    public boolean delete(int id){
         String sql = "DELETE FROM fichiers where id = ?";
 
         try {
@@ -68,6 +69,7 @@ public class FichierDao extends AbstractDao<FichierProtege> {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        return true;
     }
 
 
